@@ -1,0 +1,168 @@
+{{- define "common.deployment" -}}
+{{- $serviceConfig := (index .Values.services .Chart.Name) | default dict -}}
+{{- $svcImage := $serviceConfig.image | default dict -}}
+{{- $tag := $svcImage.tag | default .Values.image.tag -}}
+{{- if and $svcImage.use_old_tag $svcImage.old_tag -}}
+  {{- $tag = $svcImage.old_tag -}}
+{{- end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "common.name" . }}
+  namespace: {{ default .Values.namespace .Values.global.namespace }}
+  labels:
+{{ include "common.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+{{ include "common.selectorLabels" . | nindent 6 }}
+  replicas: {{ $serviceConfig.replicas | default .Values.replicas | default 1 }}
+  template:
+    metadata:
+      annotations:
+{{ if not .Values.disableAnnotationTimestamp }}
+        deployment-timestamp: "{{ date "20060102150405" .Release.Time }}"
+{{ end }}
+{{ if .Values.additionalAnnotations }}
+{{ tpl .Values.additionalAnnotations . | nindent 8 }}
+{{ end }}
+      labels:
+{{ include "common.labels" . | nindent 8 }}
+    spec:
+{{- if .Values.securityContext }}
+      securityContext:
+{{- if .Values.securityContext.fsGroup }}
+        fsGroup: {{ .Values.securityContext.fsGroup }}
+{{- end }}
+{{- if .Values.securityContext.runAsUser }}
+        runAsUser: {{ .Values.securityContext.runAsUser }}
+{{- end }}
+{{- end }}
+      volumes:
+{{- if .Values.extraVolumes }}
+{{- tpl .Values.extraVolumes $ | nindent 8 }}
+{{- end }}
+{{- if $serviceConfig.extraVolumes }}
+{{- tpl $serviceConfig.extraVolumes $ | nindent 8 }}
+{{- end }}
+{{- if and .Values.affinity .Values.affinity.preferSpreadAcrossAZ }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: "failure-domain.beta.kubernetes.io/zone"
+              labelSelector:
+                matchLabels:
+{{- include "common.selectorLabels" . | nindent 18 }}
+{{- end }}
+{{- if .Values.serviceAccount }}
+      serviceAccountName: {{ if kindIs "map" .Values.serviceAccount }}{{ .Values.serviceAccount.name | default "default" }}{{ else }}{{ .Values.serviceAccount }}{{ end }}
+{{- end }}
+{{- if .Values.initContainers }}
+      initContainers:
+{{- with .Values.initContainers.extraInitContainers }}
+{{- tpl . $ | nindent 8 }}
+{{- end }}
+{{- end }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      containers:
+{{- with .Values.extraContainers }}
+{{- tpl . $ | nindent 8 }}
+{{- end }}
+        - name: {{ template "common.name" . }}
+          image: {{ template "common.image" (dict "Values" $.Values "repository" .Values.image.repository "tag" $tag) }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | default "Always" }}
+{{- if .Values.args }}
+          args:
+{{- tpl .Values.args . | nindent 12 }}
+{{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.httpPort | default 8080 }}
+              protocol: TCP
+{{- if and .Values.healthChecks .Values.healthChecks.enabled }}
+          readinessProbe:
+            {{- tpl .Values.healthChecks.readinessProbe . | nindent 12 }}
+          livenessProbe:
+            {{- tpl .Values.healthChecks.livenessProbe . | nindent 12 }}
+{{- else }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+{{- end }}
+{{- if .Values.lifecycle }}
+          lifecycle:
+{{- toYaml .Values.lifecycle | nindent 12 }}
+{{- end }}
+{{- /* --- VALIDATION: Prevent Dummy Secret Fallback --- */ -}}
+{{- if .Values.env }}
+  {{- if contains "localhost" .Values.env }}
+    {{- if or (contains "_URI" .Values.env) (contains "_URL" .Values.env) }}
+      {{- fail (printf "CRITICAL CONFIG ERROR: Hardcoded 'localhost' detected in sensitive env var for service '%s'. Secrets MUST come from GSM/ExternalSecret via envFrom." .Chart.Name) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.global.gsm.enabled }}
+          envFrom:
+            - secretRef:
+                name: {{ include "common.fullname" . }}-gsm-sync
+{{- end }}
+          volumeMounts:
+{{- if .Values.extraVolumeMounts }}
+{{- tpl .Values.extraVolumeMounts $ | nindent 10 }}
+{{- end }}
+{{- if $serviceConfig.extraVolumeMounts }}
+{{- tpl $serviceConfig.extraVolumeMounts $ | nindent 10 }}
+{{- end }}
+          env:
+{{- /* --- Config: Static Non-Sensitive URLs (Pre-defined by global) --- */ -}}
+{{- if .Values.global.host_urls }}
+{{- range $key, $val := .Values.global.host_urls }}
+            - name: {{ $key | upper }}
+              value: {{ $val | quote }}
+{{- end }}
+{{- end }}
+{{- /* --- Config: Environment Specific Overrides (NODE_ENV, etc) --- */ -}}
+{{- if .Values.env }}
+{{- tpl .Values.env . | nindent 12 }}
+{{- end }}
+{{- $resConfig := $serviceConfig.resources | default dict }}
+          resources:
+            requests:
+              cpu: {{ $resConfig.cpu_requests | default .Values.cpu_requests | default "100m" | quote }}
+              memory: {{ $resConfig.memory_requests | default .Values.memory_requests | default "256Mi" | quote }}
+            limits:
+              cpu: {{ $resConfig.cpu_limits | default .Values.cpu_limits | default "1000m" | quote }}
+              memory: {{ $resConfig.memory_limits | default .Values.memory_limits | default "1Gi" | quote }}
+          securityContext:
+            readOnlyRootFilesystem: {{ (default dict .Values.securityContext).readOnlyRootFilesystem | default false }}
+            runAsNonRoot: {{ (default dict .Values.securityContext).runAsNonRoot | default true }}
+            runAsUser: {{ (default dict .Values.securityContext).runAsUser | default 1000 }}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- end -}}
+{{- /* FIX: HPA block removed — rendered by _hpa.yaml to avoid duplicate HPA objects per service */ -}}

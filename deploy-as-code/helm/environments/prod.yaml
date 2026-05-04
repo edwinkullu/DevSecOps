@@ -1,0 +1,44 @@
+# Global Configuration for Production
+# Disable dynamic timestamp annotation to prevent unnecessary pod restarts
+disableAnnotationTimestamp: true
+
+global:
+  environment: prod
+  namespace: postpilot
+  gsm:
+    enabled: true
+    location: "us-central1-a"
+    cluster_name: "postpilot-prod"
+  gateway:
+    enabled: true
+    className: "gke-l7-global-external-managed"
+    certMap: "postpilot-prod-cert-map"
+    staticIpName: "postpilot-prod-ip"
+    securityPolicyName: "postpilot-prod-security-policy"
+    cdn:
+      enabled: true
+  pdb:
+    enabled: false
+  env_suffix: "prod"
+  project_id: postpilot-prod
+  registry_base_url: us-docker.pkg.dev/postpilot-prod/postpilot
+  domain: postpilot.ai
+  memory_limits: "5Gi"
+
+  host_urls:
+    # Example URL mapping for your service
+    example_url: "api.postpilot.ai"
+  env: |
+    - name: NODE_ENV
+      value: "production"
+
+# --- SERVICE SPECIFIC OVERRIDES ---
+# services:
+#   example-service:
+#     replicas: 2
+#     image:
+#       tag: "latest"
+#     resources:
+#       cpu_requests: "200m"
+#       memory_requests: "512Mi"
+

@@ -1,0 +1,4 @@
+{{- /*
+Deprecated: the centralized edge entrypoint now uses Gateway API resources
+from this chart instead of a Kubernetes Ingress.
+*/ -}}

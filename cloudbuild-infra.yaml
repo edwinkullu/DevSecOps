@@ -1,0 +1,58 @@
+steps:
+  # 0. Fetch Configuration from GCS (non-committed variables)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'fetch-config'
+    entrypoint: 'bash'
+    args: 
+      - '-c'
+      - |
+        gsutil cp gs://$_BUCKET/config/$_ENV/terraform.tfvars terraform/environments/$_ENV/terraform.tfvars
+    dir: '.'
+
+  # 1. Terraform Init
+  - name: 'hashicorp/terraform:1.5.0'
+    id: 'init'
+    entrypoint: 'sh'
+    args: 
+      - '-c'
+      - |
+        STATE_FOLDER=$_ENV
+        if [ "$_ENV" = "stage" ]; then STATE_FOLDER="uat"; fi
+        
+        echo "🚀 Initializing Terraform in environments/$_ENV..."
+        echo "📦 Using State Folder: $$STATE_FOLDER"
+        
+        terraform init \
+          -backend-config="bucket=$_BUCKET" \
+          -backend-config="prefix=terraform/state/$$STATE_FOLDER" \
+          -backend-config="impersonate_service_account=$_INFRA_SA"
+    dir: 'terraform/environments/$_ENV'
+
+  # 2. Terraform Plan
+  - name: 'hashicorp/terraform:1.5.0'
+    id: 'plan'
+    entrypoint: 'sh'
+    args: 
+      - '-c'
+      - |
+        terraform plan -var-file=terraform.tfvars -out=tfplan
+    dir: 'terraform/environments/$_ENV'
+
+  # 3. Terraform Apply (Deploy)
+  - name: 'hashicorp/terraform:1.5.0'
+    id: 'apply'
+    entrypoint: 'sh'
+    args: 
+      - '-c'
+      - |
+        terraform apply -auto-approve tfplan
+    dir: 'terraform/environments/$_ENV'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+# Default substitutions (can be overridden in the Cloud Build Trigger)
+substitutions:
+  _ENV: 'stage'      # Default environment
+  _BUCKET: 'postpilot-ai' # Default state bucket
+  _INFRA_SA: 'postpilot-uat-infra-provisioner@glassy-storm-491011-q6.iam.gserviceaccount.com' # Default SA (Overridden in triggers)

@@ -1,0 +1,17 @@
+.git
+.gitignore
+.terraform
+*.tfstate
+*.tfstate.backup
+node_modules
+dist
+build
+bin
+obj
+*.tgz
+*.zip
+deployer
+# Don't ignore the charts folder itself, just the downloaded archives
+**/charts/*.tgz
+scripts/temp
+cloudbuild-dry-run.yaml

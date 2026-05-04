@@ -1,0 +1,65 @@
+# ==============================================================================
+# Build and push the custom CI/CD builder image.
+#
+# Run once from the DevOps repo root:
+#   gcloud builds submit --config cloudbuild-builder.yaml .
+# ==============================================================================
+steps:
+  - id: 'fix-permissions'
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+
+        echo "Granting Artifact Registry writer permission for Production..."
+        gcloud artifacts repositories add-iam-policy-binding postpilot \
+          --project="postpilot-prod" \
+          --location="us" \
+          --member="serviceAccount:${_COMPUTE_SA}" \
+          --role="roles/artifactregistry.writer" \
+        || echo "WARNING: unable to grant artifactregistry.writer manually if this fails."
+
+  - id: 'build-builder-image'
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ['fix-permissions']
+    args:
+      - 'build'
+      - '-t'
+      - '${_BUILDER_IMAGE}:latest'
+      - '-t'
+      - '${_BUILDER_IMAGE}:$BUILD_ID'
+      - './builder-image'
+      - '--build-arg'
+      - 'PROJECT_ID=postpilot-prod'
+
+  - id: 'push-builder-image'
+    name: 'gcr.io/cloud-builders/docker'
+    waitFor: ['build-builder-image']
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_BUILDER_IMAGE}'
+
+  # Verify helm-diff is baked into the new image
+  - id: 'verify-builder-image'
+    name: '${_BUILDER_IMAGE}:latest'
+    entrypoint: 'bash'
+    waitFor: ['push-builder-image']
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+        echo "=== Verifying builder image ==="
+        helm version
+        helmfile --version
+        helm plugin list
+        echo "=== Verification complete ==="
+
+substitutions:
+  _BUILDER_IMAGE: 'us-docker.pkg.dev/postpilot-prod/postpilot/postpilot-builder'
+  _COMPUTE_SA: '69548092470-compute@developer.gserviceaccount.com'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

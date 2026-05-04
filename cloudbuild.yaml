@@ -1,0 +1,101 @@
+# ==============================================================================
+# Strict CD Execution Worker for GKE Helmfile releases.
+# Optimized for high-speed dynamic injection from Master CI.
+# ==============================================================================
+steps:
+  - id: 'strict-helmfile-deploy'
+    name: '${_BUILDER_IMAGE}:latest'
+    entrypoint: 'bash'
+    env:
+      - 'USE_GKE_GCLOUD_AUTH_PLUGIN=True'
+      - 'HELM_PLUGINS=/root/.local/share/helm/plugins'
+    args:
+      - '-c'
+      - |
+        set -euo pipefail
+ 
+        # 1. BLUEPRINT DISCOVERY (Zero-Substitution Discovery)
+        ENV_FILE="deploy-as-code/helm/environments/stage.yaml"
+        if [[ "${_HELMFILE_ENV}" == "prod" ]]; then ENV_FILE="deploy-as-code/helm/environments/prod.yaml"; fi
+
+        DISCOVERED_CLUSTER=$(grep "cluster_name:" "$$ENV_FILE" | awk -F'"' '{print $2}')
+        DISCOVERED_REGION=$(grep "location:" "$$ENV_FILE" | awk -F'"' '{print $2}')
+
+        if [[ -z "$$DISCOVERED_CLUSTER" || -z "$$DISCOVERED_REGION" ]]; then
+          echo "CRITICAL: Could not discover cluster/region in $$ENV_FILE"
+          exit 1
+        fi
+
+        echo "==> Blueprint Discovery: cluster=$$DISCOVERED_CLUSTER, region=$$DISCOVERED_REGION"
+        
+        # 2. AUTHENTICATION
+        echo "Fetching cluster credentials for $$DISCOVERED_CLUSTER..."
+        gcloud container clusters get-credentials "$$DISCOVERED_CLUSTER" \
+          --zone "$$DISCOVERED_REGION" \
+          --project "${PROJECT_ID}"
+ 
+        # 2. TARGET IDENTIFICATION (Strict Dynamic Injection Only)
+        if [[ -n "${_TARGET_SERVICES}" && -n "${_IMAGE_TAG}" ]]; then
+          echo "==> Dynamic Injection Detected: services=[${_TARGET_SERVICES}], tag=${_IMAGE_TAG}"
+          TARGET_RELEASES="${_TARGET_SERVICES}"
+          FORCE_TAG="${_IMAGE_TAG}"
+        else
+          echo "==> No dynamic injection parameters provided. [ZERO-COMMIT] logic dictates no action."
+          echo ">>> SKIPPING DEPLOYMENT PHASE <<<"
+          exit 0
+        fi
+ 
+        # 3. PREPARATION
+        echo "Targeting release: $$TARGET_RELEASES"
+        cd deploy-as-code/helm
+        helmfile --version
+        
+        # 4. EXECUTION (High-Performance Batch Optimization)
+        # We convert the space-separated string into multiple '-l name=...' flags.
+        # This is the only way to achieve OR logic for selecting multiple releases in helmfile.
+        SELECTORS=$$(echo "$$TARGET_RELEASES" | sed 's/ / -l name=/g' | sed 's/^/-l name=/')
+        
+        SETS=""
+        echo "--- Preparing batch artifacts: $$TARGET_RELEASES ---"
+        for release in $$TARGET_RELEASES; do
+          echo "  - Building dependencies for $$release..."
+          helm dependency build "charts/postpilot-services/$$release"
+          SETS="$$SETS --set services.$$release.image.tag=$$FORCE_TAG"
+        done
+        
+        echo "--- Batch Deploying with selectors: $$SELECTORS ---"
+        HELMFILE_CMD="helmfile -e ${_HELMFILE_ENV} $$SELECTORS apply $$SETS"
+        
+        if eval "$$HELMFILE_CMD"; then
+          echo "SUCCESS: High-performance batch deployment completed."
+        else
+          echo "FAILURE: Batch deployment failed. Please check individual service logs."
+          exit 1
+        fi
+ 
+        # 5. VERIFICATION SUMMARY
+        echo ""
+        echo "============================================================"
+        echo "  STRICT DEPLOYMENT SUMMARY "
+        echo "============================================================"
+        printf "%-30s %-10s %-10s %-s\n" "SERVICE" "REVISION" "STATUS" "IMAGE TAG"
+        echo "------------------------------------------------------------"
+        for release in $$TARGET_RELEASES; do
+          INFO=$$(helm status "$$release" --namespace postpilot -o json 2>/dev/null || true)
+          if [[ -n "$$INFO" ]]; then
+            REVISION=$$(echo "$$INFO" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('version','?'))")
+            STATUS=$$(echo "$$INFO"   | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('info',{}).get('status','?'))")
+            printf "%-30s %-10s %-10s %-s\n" "$$release" "$$REVISION" "$$STATUS" "$$FORCE_TAG"
+          fi
+        done
+        echo "============================================================"
+
+substitutions:
+  _HELMFILE_ENV: 'uat'
+  _TARGET_SERVICES: ''     # Dynamic targeting (Injected by Master CI bundle)
+  _IMAGE_TAG: ''           # Dynamic tag injection (Injected by Master CI)
+  _BUILDER_IMAGE: 'me-central1-docker.pkg.dev/glassy-storm-491011-q6/postpilot-uat/postpilot-builder'
+ 
+timeout: '1800s'
+options:
+  logging: CLOUD_LOGGING_ONLY

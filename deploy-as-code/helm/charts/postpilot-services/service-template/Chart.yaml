@@ -1,0 +1,10 @@
+apiVersion: v2
+name: service-template
+description: Standard template for a POSTPILOT Microservice
+type: application
+version: 0.2.2
+appVersion: "1.0.0"
+dependencies:
+  - name: common
+    version: 0.2.2
+    repository: "file://../../common"

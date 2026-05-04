@@ -1,0 +1,42 @@
+# Global Configuration for UAT (Stage)
+# Disable dynamic timestamp annotation to prevent unnecessary pod restarts
+disableAnnotationTimestamp: true
+
+global:
+  environment: stage
+  namespace: postpilot
+  gsm:
+    enabled: true
+    location: "me-central1-a"
+    cluster_name: "postpilot-uat"
+  gateway:
+    enabled: true
+    className: "gke-l7-global-external-managed"
+    certMap: "postpilot-uat-cert-map"
+    staticIpName: "postpilot-uat-ip"
+    securityPolicyName: "postpilot-uat-security-policy"
+    cdn:
+      enabled: true
+  env_suffix: "uat"
+  project_id: glassy-storm-491011-q6
+  registry_base_url: me-central1-docker.pkg.dev/glassy-storm-491011-q6/postpilot-uat
+  domain: postpilot.ai
+  memory_limits: "5Gi"
+
+  host_urls:
+    # Example URL mapping for your service
+    example_url: "api-uat.postpilot.ai"
+  env: |
+    - name: NODE_ENV
+      value: "uat"
+
+# --- SERVICE SPECIFIC OVERRIDES ---
+# services:
+#   example-service:
+#     replicas: 1
+#     image:
+#       tag: "latest"
+#     resources:
+#       cpu_requests: "100m"
+#       memory_requests: "256Mi"
+

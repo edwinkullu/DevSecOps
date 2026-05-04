@@ -1,0 +1,39 @@
+{{- define "common.service" -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "common.name" . }}
+  namespace: {{ default .Values.namespace .Values.global.namespace }}
+  {{- $gatewayEnabled := false }}
+  {{- if and .Values.global .Values.global.gateway }}
+  {{- $gatewayEnabled = (.Values.global.gateway.enabled | default false) }}
+  {{- end }}
+  annotations:
+    {{- if not $gatewayEnabled }}
+    cloud.google.com/neg: '{"ingress": true}'
+    cloud.google.com/backend-config: '{"default": "{{ template "common.name" . }}-tcp-hc"}'
+    {{- end }}
+    {{- if .Values.metrics }}
+    prometheus.io/path: {{ .Values.metrics.path | quote }}
+    prometheus.io/port: {{ .Values.metrics.port | quote }}
+    prometheus.io/scrape: "true"
+    {{- end }}
+    {{- if and .Values.service .Values.service.additionalAnnotations }}
+    {{- tpl .Values.service.additionalAnnotations . | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "common.labels" . | nindent 4 }}
+{{- $serviceConfig := dict }}
+{{- if .Values.services }}
+{{- $serviceConfig = (index .Values.services .Chart.Name) | default dict }}
+{{- end }}
+spec:
+  type: {{ $serviceConfig.serviceType | default .Values.serviceType | default "ClusterIP" }}
+  selector:
+{{ include "common.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: http
+    port: {{ $serviceConfig.servicePort | default .Values.servicePort | default 80 }}
+    targetPort: {{ $serviceConfig.httpPort | default .Values.httpPort | default 8080 }}
+{{- end -}}

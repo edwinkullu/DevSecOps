@@ -1,0 +1,36 @@
+{{- if and .Values.gateway.enabled .Values.global.gateway.cdn.enabled }}
+---
+# Static CDN Filter: For frontend apps and cacheable APIs.
+# Cache mode: CACHE_ALL_STATIC — caches CSS/JS/images, respects Cache-Control for dynamic pages.
+# This is safe and effective for asset-fingerprinted apps.
+apiVersion: networking.gke.io/v1
+kind: GCPHTTPFilter
+metadata:
+  name: {{ .Values.gateway.name }}-cdn-filter
+  namespace: {{ .Values.namespace }}
+spec:
+  cachePolicy:
+    cacheMode: CACHE_ALL_STATIC
+    clientTTL: 3600s
+    defaultTTL: 3600s
+    maxTTL: 86400s
+    negativeCaching: false
+    serveWhileStale: 0s
+    requestCoalescing: true
+---
+# Dynamic CDN Filter: For auth/identity services.
+# CDN is ENABLED but uses USE_ORIGIN_HEADERS — fully respects the app's Cache-Control headers.
+# Login pages, tokens, and session data are NOT cached.
+# Static assets (JS/CSS) ARE cached if the app sets correct cache headers.
+apiVersion: networking.gke.io/v1
+kind: GCPHTTPFilter
+metadata:
+  name: {{ .Values.gateway.name }}-cdn-filter-dynamic
+  namespace: {{ .Values.namespace }}
+spec:
+  cachePolicy:
+    cacheMode: USE_ORIGIN_HEADERS
+    negativeCaching: false
+    serveWhileStale: 0s
+    requestCoalescing: true
+{{- end }}

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: postpilot-gateway
+description: Centralized Gateway for POSTPILOT Services
+type: application
+version: 0.2.2
+appVersion: "1.0.0"
+dependencies:
+  - name: common
+    version: 0.2.2
+    repository: "file://../../common"

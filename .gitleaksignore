@@ -1,0 +1,15 @@
+# .gitleaksignore
+# Whitelist known false positives so Gitleaks stays blocking
+# while not triggering on safe, non-sensitive patterns.
+#
+# Format: <commit-sha>:<rule-id>
+# You can find the rule-id in the Gitleaks JSON report under "RuleID"
+#
+# HOW TO ADD A FALSE POSITIVE:
+# 1. Run a build, download the gitleaks.json report from GCS:
+#    gs://postpilot-ai/security-reports/<BUILD_ID>/<service>/gitleaks.json
+# 2. Find the entry, copy the "Commit" and "RuleID" fields
+# 3. Add a line below in format: <commit>:<rule-id>
+#
+# Example:
+# a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2:generic-api-key

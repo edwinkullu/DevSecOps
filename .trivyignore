@@ -1,0 +1,77 @@
+# ==============================================================================
+# POSTPILOT GLOBAL TRIVY IGNORE FILE
+# ==============================================================================
+# Purpose:
+# This file suppresses approved Trivy findings across source and image scans.
+#
+# Used by Cloud Build with:
+#   --ignorefile /workspace/.trivyignore
+#
+# Supported entries:
+#   - CVE IDs, for example: CVE-2025-55182
+#   - GHSA IDs, for example: GHSA-xxxx-yyyy-zzzz
+#   - Trivy IDs, for example: AVD-KSV-0001
+#
+# Rules:
+#   - Add one ID per line.
+#   - Lines starting with # are comments.
+#   - Only add items after security review.
+#   - Prefer upgrading dependencies instead of ignoring CRITICAL/HIGH issues.
+#   - Do not use this file for Gitleaks findings. Use .gitleaks.toml instead.
+#
+# Required context for every active exception:
+#   - Reason
+#   - Owner
+#   - Approval
+#   - Expiry or review date
+#   - Tracking ticket
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Temporary Exceptions
+# ------------------------------------------------------------------------------
+
+# CVE-YYYY-NNNNN
+# Reason:
+# Owner:
+# Approved by:
+# Expiry:
+# Tracking ticket:
+
+# Example only. Keep commented unless approved as a temporary bypass.
+# CVE-2025-55182
+# Reason: Temporary bypass while postpilot-web upgrades next from 15.2.3 to a fixed version.
+# Owner: frontend team
+# Approved by:
+# Expiry: YYYY-MM-DD
+# Tracking ticket:
+
+CVE-2025-55182
+# Reason: Temporary test bypass while postpilot-web upgrades next from 15.2.3 to a fixed version.
+# Owner: frontend team
+# Approved by: temporary CI validation
+# Expiry: 2026-05-08
+# Tracking ticket: TODO
+
+# ------------------------------------------------------------------------------
+# Accepted Risk
+# ------------------------------------------------------------------------------
+
+# CVE-YYYY-NNNNN
+# Reason:
+# Mitigation:
+# Owner:
+# Approved by:
+# Review date:
+# Tracking ticket:
+
+# ------------------------------------------------------------------------------
+# False Positives
+# ------------------------------------------------------------------------------
+
+# GHSA-xxxx-yyyy-zzzz
+# Reason:
+# Evidence:
+# Owner:
+# Approved by:
+# Tracking ticket:

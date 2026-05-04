@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: external-secrets-operator-viewer
+  namespace: {{ .Release.Namespace | default "postpilot" }}
+  annotations:
+    description: "Allows the External Secrets operator to view service accounts in this namespace for Workload Identity."
+subjects:
+- kind: ServiceAccount
+  name: external-secrets
+  namespace: {{ .Values.externalSecretsNamespace | default "external-secrets" }}
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
