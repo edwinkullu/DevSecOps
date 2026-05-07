@@ -1,0 +1,62 @@
+# Default values for argocd-config.
+# This chart manages ArgoCD Applications and Projects.
+
+global:
+  domain: postpilot.ai
+  repoUrl: git@github-personal:edwinkullu/DevSecOps.git
+  targetRevision: HEAD
+
+projects:
+  postpilot:
+    description: "Main project for PostPilot microservices"
+    sourceRepos:
+      - "*"
+    destinations:
+      - server: https://kubernetes.default.svc
+        namespace: postpilot
+    clusterResourceWhitelist:
+      - group: '*'
+        kind: '*'
+
+applications:
+  - name: postpilot-fleet-uat
+    project: postpilot
+    source:
+      path: deploy-as-code/helm
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - environments/uat.yaml
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: postpilot
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+    imageUpdater:
+      imageList: "fleet=me-central1-docker.pkg.dev/glassy-storm-491011-q6/postpilot-uat/service-template"
+      extraArgs:
+        "fleet.update-strategy": "latest"
+        "fleet.allow-tags": "regexp:^uat-.*"
+
+  - name: postpilot-fleet-prod
+    project: postpilot
+    source:
+      path: deploy-as-code/helm
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - environments/prod.yaml
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: postpilot
+    syncPolicy:
+      automated:
+        prune: false # Safety: Manual sync for production
+        selfHeal: true
+    imageUpdater:
+      imageList: "fleet=us-docker.pkg.dev/postpilot-prod/postpilot/service-template"
+      extraArgs:
+        "fleet.update-strategy": "latest"
+        "fleet.allow-tags": "regexp:^prod-.*"

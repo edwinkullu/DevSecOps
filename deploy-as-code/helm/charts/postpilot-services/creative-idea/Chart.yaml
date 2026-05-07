@@ -1,0 +1,30 @@
+# creative-idea Chart.yaml
+apiVersion: v2
+name: creative-idea
+description: A Helm chart for Creative Idea AI
+type: application
+version: 0.2.2
+appVersion: "1.0.0"
+dependencies:
+  - name: common
+    version: 0.2.2
+    repository: "file://../../common"
+---
+# values.yaml for creative-idea
+common:
+  nameOverride: "creative-idea"
+  fullnameOverride: "creative-idea"
+
+namespace: cbmo
+replicas: 1
+httpPort: 5000
+
+image:
+  repository: creativeideaai
+  tag: latest
+  pullPolicy: Always
+
+cpu_requests: "100m"
+memory_requests: "256Mi"
+cpu_limits: "300m"
+memory_limits: "512Mi"

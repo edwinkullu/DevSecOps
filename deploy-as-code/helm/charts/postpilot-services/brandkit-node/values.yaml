@@ -1,0 +1,66 @@
+# values.yaml for brandkit-node (v1.0.2-env-aware)
+common:
+  nameOverride: ''
+  fullnameOverride: ''
+
+namespace: cbmo
+servicePort: 80
+httpPort: 8000
+replicas: 2
+
+global:
+  gsm:
+    enabled: true
+  project_id: "glassy-storm-491011-q6"
+  env_suffix: "uat"
+  cert_map: "cbmo-uat-cert-map"
+
+serviceAccount:
+  create: false
+  name: "cbmo-app-sa"
+
+ingress:
+  enabled: false
+  hostName: "campaign-brief-api.cbmo.ai"
+
+# Auto-Sync Enabled: Monitoring 'cbmo-service' labels in GCP Secret Manager
+
+image:
+  repository: campaignbrandkitnode
+  tag: ""
+  pullPolicy: Always
+extraVolumeMounts: |
+  - name: logs
+    mountPath: /app/logs
+extraVolumes: |
+  - name: logs
+    emptyDir: {}
+
+env: '{{ .Values.global.env }}'
+
+# Health Check Overrides
+healthChecks:
+  enabled: true
+  readinessProbe: |
+    tcpSocket:
+      port: http
+    initialDelaySeconds: 45
+    periodSeconds: 15
+    failureThreshold: 10
+  livenessProbe: |
+    tcpSocket:
+      port: http
+    initialDelaySeconds: 90
+    periodSeconds: 30
+
+# Default resources (Overridden by stage.yaml via common chart)
+cpu_requests: "100m"
+memory_requests: "500Mi"
+cpu_limits: "1000m"
+memory_limits: "2Gi"
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  memoryThreshold: 70

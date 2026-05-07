@@ -1,0 +1,48 @@
+# values.yaml for media-plan-node (v1.0.2-env-aware)
+common:
+  nameOverride: ''
+  fullnameOverride: ''
+
+namespace: cbmo
+servicePort: 80
+httpPort: 3000
+replicas: 2
+
+global:
+  gsm:
+    enabled: true
+  project_id: "glassy-storm-491011-q6"
+  env_suffix: "uat"
+  cert_map: "cbmo-uat-cert-map"
+
+serviceAccount:
+  create: false
+  name: "cbmo-app-sa"
+
+ingress:
+  enabled: false
+  hostName: "media-plan-api.cbmo.ai"
+
+# Auto-Sync Enabled: Monitoring 'cbmo-service' labels in GCP Secret Manager
+
+image:
+  repository: mediaplannode
+  tag: ""
+  pullPolicy: Always
+
+env: '{{ .Values.global.env }}'
+
+# Default resources (Overridden by stage.yaml via common chart)
+cpu_requests: "100m"
+memory_requests: "500Mi"
+cpu_limits: "1000m"
+memory_limits: "2Gi"
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  memoryThreshold: 70
+
+
+

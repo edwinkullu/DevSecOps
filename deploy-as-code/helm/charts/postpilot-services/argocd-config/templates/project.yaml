@@ -1,0 +1,18 @@
+{{- range $name, $project := .Values.projects }}
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ $name }}
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: {{ $project.description | quote }}
+  sourceRepos:
+{{ toYaml $project.sourceRepos | indent 4 }}
+  destinations:
+{{ toYaml $project.destinations | indent 4 }}
+  clusterResourceWhitelist:
+{{ toYaml $project.clusterResourceWhitelist | indent 4 }}
+---
+{{- end }}
