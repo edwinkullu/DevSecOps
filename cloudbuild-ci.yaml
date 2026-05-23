@@ -26,7 +26,7 @@ steps:
         echo "Building ${_SERVICE_NAME}..." > /workspace/status.log
 
   # 2. SECRET SCAN: Scan repository files for credentials
-  - name: 'zricethezaster/gitleaks:latest'
+  - name: 'zricethezav/gitleaks:latest'
     id: 'secret-scan'
     waitFor: ['generate-build-tag']
     args: ['detect', '--source=/workspace', '--verbose', '--redact']
