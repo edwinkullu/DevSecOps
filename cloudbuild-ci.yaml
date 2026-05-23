@@ -1,0 +1,101 @@
+# ==============================================================================
+# Standardized DevSecOps CI Pipeline for POSTPILOT microservices
+# Enforces: Secret scanning, SonarQube SAST, Trivy FS, Docker compile, and Trivy Image.
+# ==============================================================================
+substitutions:
+  _SERVICE_NAME: ""
+  _IMAGE_NAME: ""
+  _REGISTRY_URL: ""
+  _BUILDER_IMAGE: ""
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+
+steps:
+  # 1. INITIALIZE: Generate build tag
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'generate-build-tag'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -eu
+        TAG=$$(date +%Y%m%d-%H%M%S)
+        echo "$$TAG" > /workspace/tag.txt
+        echo "Building ${_SERVICE_NAME}..." > /workspace/status.log
+
+  # 2. SECRET SCAN: Scan repository files for credentials
+  - name: 'zricethezaster/gitleaks:latest'
+    id: 'secret-scan'
+    waitFor: ['generate-build-tag']
+    args: ['detect', '--source=/workspace', '--verbose', '--redact']
+
+  # 3. SAST: SonarQube Code Analysis
+  - name: 'sonarsource/sonar-scanner-cli:latest'
+    id: 'sast-sonar'
+    waitFor: ['generate-build-tag']
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        if [ -n "$$SONAR_TOKEN" ]; then
+          sonar-scanner \
+            -Dsonar.projectKey=postpilot-${_SERVICE_NAME} \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.token=$$SONAR_TOKEN
+        else
+          echo "WARNING: SONAR_TOKEN not set, skipping SonarQube scan."
+        fi
+    secretEnv: ['SONAR_TOKEN']
+
+  # 4. SCA: Trivy FS Scan for vulnerable library dependencies
+  - name: 'aquasec/trivy:0.55.2'
+    id: 'sca-trivy-fs'
+    waitFor: ['generate-build-tag']
+    args: ['fs', '--exit-code', '0', '--severity', 'HIGH,CRITICAL', '.']
+
+  # 5. BUILD: Compile Docker Image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'docker-build'
+    waitFor: ['secret-scan', 'sast-sonar', 'sca-trivy-fs']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -eu
+        TAG=$$(cat /workspace/tag.txt)
+        docker build -t ${_REGISTRY_URL}/${_IMAGE_NAME}:$$TAG -t ${_REGISTRY_URL}/${_IMAGE_NAME}:latest .
+
+  # 6. IMAGE SCAN: Scan built image layers before push
+  - name: 'aquasec/trivy:0.55.2'
+    id: 'trivy-image-scan'
+    waitFor: ['docker-build']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -eu
+        TAG=$$(cat /workspace/tag.txt)
+        trivy image --exit-code 1 --severity CRITICAL ${_REGISTRY_URL}/${_IMAGE_NAME}:$$TAG
+
+  # 7. REGISTRY PUSH: Publish tags to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'docker-push'
+    waitFor: ['trivy-image-scan']
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        set -eu
+        TAG=$$(cat /workspace/tag.txt)
+        docker push ${_REGISTRY_URL}/${_IMAGE_NAME}:$$TAG
+        docker push ${_REGISTRY_URL}/${_IMAGE_NAME}:latest
+
+
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/69548092470/secrets/SONAR_TOKEN/versions/latest
+      env: 'SONAR_TOKEN'

@@ -14,7 +14,7 @@ templates:
     needs:
       - postpilot/external-secrets-config
     values:
-      - environments/{{ if eq .Environment.Name "prod" }}prod{{ else }}stage{{ end }}.yaml
+      - environments/{{ if eq .Environment.Name "prod" }}prod{{ else }}uat{{ end }}.yaml
 
 releases:
   - name: external-secrets
@@ -33,7 +33,7 @@ releases:
     namespace: postpilot
     chart: charts/postpilot-services/postpilot-infra
     values:
-      - environments/{{ if eq .Environment.Name "prod" }}prod{{ else }}stage{{ end }}.yaml
+      - environments/{{ if eq .Environment.Name "prod" }}prod{{ else }}uat{{ end }}.yaml
     needs:
       - external-secrets/external-secrets
 
@@ -41,7 +41,14 @@ releases:
     <<: *default
     chart: charts/postpilot-services/postpilot-gateway
 
-# Example application release:
-#  - name: example-service
-#    <<: *default
-#    chart: charts/postpilot-services/example-service
+  - name: dashboard
+    <<: *default
+    chart: charts/postpilot-services/dashboard
+
+  - name: api-server
+    <<: *default
+    chart: charts/postpilot-services/api-server
+
+  - name: agent-engine
+    <<: *default
+    chart: charts/postpilot-services/agent-engine

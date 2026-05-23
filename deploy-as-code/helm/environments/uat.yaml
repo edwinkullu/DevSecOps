@@ -24,19 +24,34 @@ global:
   memory_limits: "5Gi"
 
   host_urls:
-    # Example URL mapping for your service
-    example_url: "api-uat.postpilot.ai"
+    dashboard_url: "dashboard-uat.postpilot.ai"
+    api_url: "api-uat.postpilot.ai"
+    agent_url: "agent-uat.postpilot.ai"
   env: |
     - name: NODE_ENV
       value: "uat"
 
 # --- SERVICE SPECIFIC OVERRIDES ---
-# services:
-#   example-service:
-#     replicas: 1
-#     image:
-#       tag: "latest"
-#     resources:
-#       cpu_requests: "100m"
-#       memory_requests: "256Mi"
+services:
+  dashboard:
+    replicas: 1
+    resources:
+      cpu_requests: "100m"
+      memory_requests: "256Mi"
+      cpu_limits: "1000m"
+      memory_limits: "512Mi"
+  api-server:
+    replicas: 1
+    resources:
+      cpu_requests: "100m"
+      memory_requests: "256Mi"
+      cpu_limits: "1000m"
+      memory_limits: "512Mi"
+  agent-engine:
+    replicas: 1
+    resources:
+      cpu_requests: "200m"
+      memory_requests: "512Mi"
+      cpu_limits: "1000m"
+      memory_limits: "1Gi"
 

@@ -23,7 +23,6 @@ resource "google_compute_url_map" "map" {
 }
 */
 
-/*
 # DNS Authorization for Wildcard
 resource "google_certificate_manager_dns_authorization" "wildcard_auth" {
   name        = "${var.name}-${var.environment}-dns-auth"
@@ -31,22 +30,18 @@ resource "google_certificate_manager_dns_authorization" "wildcard_auth" {
   domain      = var.domain_name
 }
 
-# Certificate Manager
+# Certificate Manager - Wildcard Managed SSL Certificate
 resource "google_certificate_manager_certificate" "wildcard_cert" {
   name        = "${var.name}-${var.environment}-ssl-cert"
-  description = "Wildcard certificate for *.${var.domain_name}"
+  description = "Wildcard certificate for *.${var.domain_name} and ${var.domain_name}"
   location    = "global"
   managed {
-    domains = ["*.${var.domain_name}"]
+    domains = ["*.${var.domain_name}", var.domain_name]
     dns_authorizations = [
       google_certificate_manager_dns_authorization.wildcard_auth.id
     ]
   }
-  lifecycle {
-    ignore_changes = [managed[0].dns_authorizations]
-  }
 }
-*/
 
 resource "google_certificate_manager_certificate_map" "map" {
   name = "${var.name}-${var.environment}-cert-map"
@@ -55,15 +50,14 @@ resource "google_certificate_manager_certificate_map" "map" {
 resource "google_certificate_manager_certificate_map_entry" "wildcard_entry" {
   name         = "wildcard-entry"
   map          = google_certificate_manager_certificate_map.map.name
-  # Pointing to the manually managed certificate (pattern: uat-ssl-cert or prod-ssl-cert)
-  certificates = ["projects/${var.project_id}/locations/global/certificates/${var.environment}-ssl-cert"]
+  certificates = [google_certificate_manager_certificate.wildcard_cert.id]
   hostname     = "*.${var.domain_name}"
 }
 
 resource "google_certificate_manager_certificate_map_entry" "apex_entry" {
   name         = "apex-entry"
   map          = google_certificate_manager_certificate_map.map.name
-  certificates = ["projects/${var.project_id}/locations/global/certificates/${var.environment}-ssl-cert"]
+  certificates = [google_certificate_manager_certificate.wildcard_cert.id]
   hostname     = var.domain_name
 }
 

@@ -22,5 +22,6 @@ serviceAccount:
 # Master Route Mapping: Links environment URL keys to service names.
 # This makes the Gateway environment-aware (UAT vs Prod).
 routeMapping:
-  # Example: Link the 'example_url' defined in your environment to the 'example-service'
-  # example_url: "example-service"
+  dashboard_url: "dashboard"
+  api_url: "api-server"
+  agent_url: "agent-engine"

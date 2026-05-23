@@ -1,5 +1,5 @@
 {{- define "common.deployment" -}}
-{{- $serviceConfig := (index .Values.services .Chart.Name) | default dict -}}
+{{- $serviceConfig := (index .Values.services .Release.Name) | default dict -}}
 {{- $svcImage := $serviceConfig.image | default dict -}}
 {{- $tag := $svcImage.tag | default .Values.image.tag -}}
 {{- if and $svcImage.use_old_tag $svcImage.old_tag -}}

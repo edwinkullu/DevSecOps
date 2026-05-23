@@ -7,7 +7,7 @@ global:
   namespace: postpilot
   gsm:
     enabled: true
-    location: "us-central1-a"
+    location: "asia-south1"
     cluster_name: "postpilot-prod"
   gateway:
     enabled: true
@@ -16,29 +16,44 @@ global:
     staticIpName: "postpilot-prod-ip"
     securityPolicyName: "postpilot-prod-security-policy"
     cdn:
-      enabled: true
+      enabled: false
   pdb:
     enabled: false
   env_suffix: "prod"
-  project_id: postpilot-prod
-  registry_base_url: us-docker.pkg.dev/postpilot-prod/postpilot
-  domain: postpilot.ai
+  project_id: postpilot-0
+  registry_base_url: asia-docker.pkg.dev/postpilot-0/postpilot
+  domain: kullu.site
   memory_limits: "5Gi"
 
   host_urls:
-    # Example URL mapping for your service
-    example_url: "api.postpilot.ai"
+    dashboard_url: "postpilot.kullu.site"
+    api_url: "api-postpilot.kullu.site"
+    agent_url: "agent-postpilot.kullu.site"
   env: |
     - name: NODE_ENV
       value: "production"
 
 # --- SERVICE SPECIFIC OVERRIDES ---
-# services:
-#   example-service:
-#     replicas: 2
-#     image:
-#       tag: "latest"
-#     resources:
-#       cpu_requests: "200m"
-#       memory_requests: "512Mi"
+services:
+  dashboard:
+    replicas: 2
+    resources:
+      cpu_requests: "200m"
+      memory_requests: "512Mi"
+      cpu_limits: "1000m"
+      memory_limits: "1Gi"
+  api-server:
+    replicas: 2
+    resources:
+      cpu_requests: "200m"
+      memory_requests: "512Mi"
+      cpu_limits: "1000m"
+      memory_limits: "1Gi"
+  agent-engine:
+    replicas: 2
+    resources:
+      cpu_requests: "500m"
+      memory_requests: "1Gi"
+      cpu_limits: "2000m"
+      memory_limits: "2Gi"
 

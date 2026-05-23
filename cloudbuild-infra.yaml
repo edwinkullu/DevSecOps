@@ -53,6 +53,6 @@ options:
 
 # Default substitutions (can be overridden in the Cloud Build Trigger)
 substitutions:
-  _ENV: 'stage'      # Default environment
+  _ENV: 'uat'      # Default environment
   _BUCKET: 'postpilot-ai' # Default state bucket
   _INFRA_SA: 'postpilot-uat-infra-provisioner@glassy-storm-491011-q6.iam.gserviceaccount.com' # Default SA (Overridden in triggers)

@@ -1,4 +1,5 @@
-{{- $serviceConfig := (index .Values.services .Chart.Name) | default dict -}}
+{{- define "common.hpa" -}}
+{{- $serviceConfig := (index .Values.services .Release.Name) | default dict -}}
 {{- $hpaConfig := $serviceConfig.hpa | default .Values.hpa | default dict -}}
 {{- if or .Values.hpa.enabled $hpaConfig.enabled -}}
 apiVersion: autoscaling/v2
@@ -23,3 +24,4 @@ spec:
         type: Utilization
         averageUtilization: {{ $hpaConfig.memoryThreshold | default .Values.hpa.memoryThreshold | default 70 }}
 {{- end }}
+{{- end -}}

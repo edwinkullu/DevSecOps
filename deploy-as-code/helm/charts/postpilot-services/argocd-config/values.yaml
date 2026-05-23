@@ -2,7 +2,7 @@
 # This chart manages ArgoCD Applications and Projects.
 
 global:
-  domain: postpilot.ai
+  domain: kullu.site
   repoUrl: git@github-personal:edwinkullu/DevSecOps.git
   targetRevision: HEAD
 
@@ -19,27 +19,6 @@ projects:
         kind: '*'
 
 applications:
-  - name: postpilot-fleet-uat
-    project: postpilot
-    source:
-      path: deploy-as-code/helm
-      targetRevision: HEAD
-      helm:
-        valueFiles:
-          - environments/uat.yaml
-    destination:
-      server: https://kubernetes.default.svc
-      namespace: postpilot
-    syncPolicy:
-      automated:
-        prune: true
-        selfHeal: true
-    imageUpdater:
-      imageList: "fleet=me-central1-docker.pkg.dev/glassy-storm-491011-q6/postpilot-uat/service-template"
-      extraArgs:
-        "fleet.update-strategy": "latest"
-        "fleet.allow-tags": "regexp:^uat-.*"
-
   - name: postpilot-fleet-prod
     project: postpilot
     source:
@@ -56,7 +35,11 @@ applications:
         prune: false # Safety: Manual sync for production
         selfHeal: true
     imageUpdater:
-      imageList: "fleet=us-docker.pkg.dev/postpilot-prod/postpilot/service-template"
+      imageList: "dashboard=asia-docker.pkg.dev/postpilot-0/postpilot/dashboard,api-server=asia-docker.pkg.dev/postpilot-0/postpilot/api-server,agent-engine=asia-docker.pkg.dev/postpilot-0/postpilot/agent-engine"
       extraArgs:
-        "fleet.update-strategy": "latest"
-        "fleet.allow-tags": "regexp:^prod-.*"
+        "dashboard.update-strategy": "latest"
+        "dashboard.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"
+        "api-server.update-strategy": "latest"
+        "api-server.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"
+        "agent-engine.update-strategy": "latest"
+        "agent-engine.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"

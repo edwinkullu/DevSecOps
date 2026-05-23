@@ -10,7 +10,6 @@ output "url_map_id" {
 }
 */
 
-/*
 output "ssl_dns_auth_name" {
   value       = google_certificate_manager_dns_authorization.wildcard_auth.dns_resource_record[0].name
   description = "The CNAME name to add to DNS for SSL validation"
@@ -20,5 +19,4 @@ output "ssl_dns_auth_value" {
   value       = google_certificate_manager_dns_authorization.wildcard_auth.dns_resource_record[0].data
   description = "The CNAME value to add to DNS for SSL validation"
 }
-*/
 

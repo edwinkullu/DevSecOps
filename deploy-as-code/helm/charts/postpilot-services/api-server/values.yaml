@@ -1,0 +1,67 @@
+## --- GLOBAL SETTINGS (DO NOT MODIFY MANUALLY, CONTROLLED BY stage.yaml) ---
+global:
+  env_suffix: ""
+  project_id: ""
+  registry_base_url: ""
+
+## --- SERVICE CONFIGURATION ---
+replicaCount: 1
+httpPort: 5000
+
+image:
+  repository: "api-server" # e.g. "brandkit-app"
+  pullPolicy: IfNotPresent
+  tag: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 5000
+
+## --- RESOURCES & HPA ---
+resources:
+  requests:
+    cpu: 100m
+    memory: 500Mi
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 70
+
+## --- SECURITY & SECRETS ---
+serviceAccount:
+  create: false # Shared SA managed by postpilot-gateway
+  name: "postpilot-app-sa"
+
+# Auto-Sync Enabled: Monitoring 'postpilot-service' labels in GCP Secret Manager
+
+## --- NETWORKING (GATEWAY API) ---
+# This links the service to the Global Load Balancer through the unified Gateway
+backendPolicy:
+  enabled: true
+  securityPolicy: "postpilot-uat-security-policy"
+  cdn:
+    enabled: true
+
+# Standard health checks for the common library chart
+healthChecks:
+  enabled: true
+  readinessProbe: |
+    httpGet:
+      path: "/health"
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  livenessProbe: |
+    httpGet:
+      path: "/health"
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 20
+

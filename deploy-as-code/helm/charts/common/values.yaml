@@ -4,7 +4,7 @@
 global:
   environment: stage
   env_suffix: uat
-  domain: postpilot.ai
+  domain: kullu.site
   namespace: postpilot
   registry_base_url: me-central1-docker.pkg.dev/glassy-storm-491011-q6/postpilot-uat
   projectId: glassy-storm-491011-q6
