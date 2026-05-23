@@ -3,7 +3,7 @@
 
 global:
   domain: kullu.site
-  repoUrl: git@github-personal:edwinkullu/DevSecOps.git
+  repoUrl: git@github.com:edwinkullu/DevSecOps.git
   targetRevision: HEAD
 
 projects:
