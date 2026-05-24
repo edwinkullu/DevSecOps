@@ -47,7 +47,7 @@ applications:
       namespace: postpilot
     syncPolicy:
       automated:
-        prune: false
+        prune: true
         selfHeal: true
 
   - name: postpilot-gateway-prod
@@ -63,7 +63,7 @@ applications:
       namespace: postpilot
     syncPolicy:
       automated:
-        prune: false
+        prune: true
         selfHeal: true
 
   - name: dashboard-prod
@@ -79,7 +79,7 @@ applications:
       namespace: postpilot
     syncPolicy:
       automated:
-        prune: false
+        prune: true
         selfHeal: true
     imageUpdater:
       imageList: "dashboard=asia-docker.pkg.dev/postpilot-0/postpilot/dashboard"
@@ -100,7 +100,7 @@ applications:
       namespace: postpilot
     syncPolicy:
       automated:
-        prune: false
+        prune: true
         selfHeal: true
     imageUpdater:
       imageList: "api-server=asia-docker.pkg.dev/postpilot-0/postpilot/api-server"
@@ -115,13 +115,13 @@ applications:
       targetRevision: HEAD
       helm:
         valueFiles:
-          - ../../../../environments/prod.yaml
+          - ../../../environments/prod.yaml
     destination:
       server: https://kubernetes.default.svc
       namespace: postpilot
     syncPolicy:
       automated:
-        prune: false
+        prune: true
         selfHeal: true
     imageUpdater:
       imageList: "agent-engine=asia-docker.pkg.dev/postpilot-0/postpilot/agent-engine"
