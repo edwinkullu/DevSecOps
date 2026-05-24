@@ -140,6 +140,9 @@ spec:
 {{- if .Values.env }}
 {{- tpl .Values.env . | nindent 12 }}
 {{- end }}
+{{- if .Values.global.env }}
+{{- tpl .Values.global.env . | nindent 12 }}
+{{- end }}
 {{- $resConfig := $serviceConfig.resources | default dict }}
           resources:
             requests:
