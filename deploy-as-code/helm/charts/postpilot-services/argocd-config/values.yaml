@@ -72,6 +72,7 @@ applications:
       path: deploy-as-code/helm/charts/postpilot-services/dashboard
       targetRevision: HEAD
       helm:
+        releaseName: dashboard
         valueFiles:
           - ../../../environments/prod.yaml
     destination:
@@ -93,6 +94,7 @@ applications:
       path: deploy-as-code/helm/charts/postpilot-services/api-server
       targetRevision: HEAD
       helm:
+        releaseName: api-server
         valueFiles:
           - ../../../environments/prod.yaml
     destination:
@@ -114,6 +116,7 @@ applications:
       path: deploy-as-code/helm/charts/postpilot-services/agent-engine
       targetRevision: HEAD
       helm:
+        releaseName: agent-engine
         valueFiles:
           - ../../../environments/prod.yaml
     destination:

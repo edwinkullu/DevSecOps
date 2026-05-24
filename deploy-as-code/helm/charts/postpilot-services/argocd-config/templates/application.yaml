@@ -27,6 +27,9 @@ spec:
     {{- end }}
     {{- if .source.helm }}
     helm:
+      {{- if .source.helm.releaseName }}
+      releaseName: {{ .source.helm.releaseName }}
+      {{- end }}
       {{- if .source.helm.valueFiles }}
       valueFiles:
 {{ toYaml .source.helm.valueFiles | indent 8 }}
