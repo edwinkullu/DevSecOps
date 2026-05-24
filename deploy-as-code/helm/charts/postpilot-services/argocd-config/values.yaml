@@ -41,7 +41,7 @@ applications:
       targetRevision: HEAD
       helm:
         valueFiles:
-          - ../../../../environments/prod.yaml
+          - ../../../environments/prod.yaml
     destination:
       server: https://kubernetes.default.svc
       namespace: postpilot
@@ -57,7 +57,7 @@ applications:
       targetRevision: HEAD
       helm:
         valueFiles:
-          - ../../../../environments/prod.yaml
+          - ../../../environments/prod.yaml
     destination:
       server: https://kubernetes.default.svc
       namespace: postpilot
@@ -73,7 +73,7 @@ applications:
       targetRevision: HEAD
       helm:
         valueFiles:
-          - ../../../../environments/prod.yaml
+          - ../../../environments/prod.yaml
     destination:
       server: https://kubernetes.default.svc
       namespace: postpilot
@@ -94,7 +94,7 @@ applications:
       targetRevision: HEAD
       helm:
         valueFiles:
-          - ../../../../environments/prod.yaml
+          - ../../../environments/prod.yaml
     destination:
       server: https://kubernetes.default.svc
       namespace: postpilot
