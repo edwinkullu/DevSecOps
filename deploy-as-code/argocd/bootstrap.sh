@@ -100,8 +100,36 @@ echo ""
 echo "[5/8] Configuring Image Updater registry (Artifact Registry)..."
 kubectl apply -f "$(dirname "$0")/image-updater-registries.yaml"
 
-# Make the gcloud-auth script executable inside the pod by mounting it
-# (Image Updater reads the ConfigMap and writes it to /scripts automatically)
+# The gcloud-auth.sh script is in the ConfigMap but must be mounted into the pod
+# at /scripts/ with execute permission (defaultMode 0755 = 493 decimal).
+# Patch the Deployment to add this volume + volumeMount if not already present.
+if ! kubectl get deployment argocd-image-updater -n argocd \
+    -o jsonpath='{.spec.template.spec.volumes[*].name}' | grep -q "scripts"; then
+  kubectl patch deployment argocd-image-updater -n argocd --type=json -p='[
+    {
+      "op": "add",
+      "path": "/spec/template/spec/volumes/-",
+      "value": {
+        "name": "scripts",
+        "configMap": {
+          "name": "argocd-image-updater-config",
+          "defaultMode": 493,
+          "items": [{"key": "gcloud-auth.sh", "path": "gcloud-auth.sh"}]
+        }
+      }
+    },
+    {
+      "op": "add",
+      "path": "/spec/template/spec/containers/0/volumeMounts/-",
+      "value": {
+        "name": "scripts",
+        "mountPath": "/scripts"
+      }
+    }
+  ]'
+  echo "  Deployment patched to mount /scripts"
+fi
+
 kubectl rollout restart deployment/argocd-image-updater -n argocd
 kubectl rollout status deployment/argocd-image-updater -n argocd --timeout=120s
 
