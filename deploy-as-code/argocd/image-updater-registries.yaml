@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-image-updater-config
+  namespace: argocd
+data:
+  # Tell Image Updater to use the GCP credential helper for Artifact Registry.
+  # The argocd-image-updater ServiceAccount is bound (via Workload Identity) to
+  # the postpilot-prod-gke-sa GSA which has roles/artifactregistry.reader.
+  registries.yaml: |
+    registries:
+    - name: Google Artifact Registry (asia)
+      api_url: https://asia-docker.pkg.dev
+      prefix: asia-docker.pkg.dev
+      credentials: ext:/scripts/gcloud-auth.sh
+      credsexpire: 10m
+      defaultns: library
+      insecure: false
+  # Shell script to fetch a short-lived Google OAuth2 token via the metadata server.
+  # Works because the pod's KSA is annotated with the GSA that has AR reader rights.
+  gcloud-auth.sh: |
+    #!/bin/sh
+    TOKEN=$(curl -sf \
+      -H "Metadata-Flavor: Google" \
+      "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token" \
+      | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+    echo "oauth2accesstoken:${TOKEN}"

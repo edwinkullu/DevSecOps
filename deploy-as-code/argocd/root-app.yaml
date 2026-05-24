@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: git@github.com:edwinkullu/DevSecOps.git
+    repoURL: https://github.com/edwinkullu/DevSecOps.git
     targetRevision: HEAD
     path: deploy-as-code/helm/charts/postpilot-services/argocd-config
   destination:

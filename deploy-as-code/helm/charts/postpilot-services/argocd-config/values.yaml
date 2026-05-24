@@ -1,6 +1,6 @@
 global:
   domain: kullu.site
-  repoUrl: git@github.com:edwinkullu/DevSecOps.git
+  repoUrl: https://github.com/edwinkullu/DevSecOps.git
   targetRevision: HEAD
 
 projects:
@@ -84,9 +84,11 @@ applications:
         selfHeal: true
     imageUpdater:
       imageList: "dashboard=asia-docker.pkg.dev/postpilot-0/postpilot/dashboard"
+      writeBackMethod: argocd
       extraArgs:
         "dashboard.update-strategy": "latest"
         "dashboard.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"
+        "dashboard.helm.image-tag": "image.tag"
 
   - name: api-server-prod
     project: postpilot
@@ -106,9 +108,11 @@ applications:
         selfHeal: true
     imageUpdater:
       imageList: "api-server=asia-docker.pkg.dev/postpilot-0/postpilot/api-server"
+      writeBackMethod: argocd
       extraArgs:
         "api-server.update-strategy": "latest"
         "api-server.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"
+        "api-server.helm.image-tag": "image.tag"
 
   - name: agent-engine-prod
     project: postpilot
@@ -128,6 +132,8 @@ applications:
         selfHeal: true
     imageUpdater:
       imageList: "agent-engine=asia-docker.pkg.dev/postpilot-0/postpilot/agent-engine"
+      writeBackMethod: argocd
       extraArgs:
         "agent-engine.update-strategy": "latest"
         "agent-engine.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"
+        "agent-engine.helm.image-tag": "image.tag"
