@@ -1,6 +1,3 @@
-# Default values for argocd-config.
-# This chart manages ArgoCD Applications and Projects.
-
 global:
   domain: kullu.site
   repoUrl: git@github.com:edwinkullu/DevSecOps.git
@@ -14,32 +11,120 @@ projects:
     destinations:
       - server: https://kubernetes.default.svc
         namespace: postpilot
+      - server: https://kubernetes.default.svc
+        namespace: external-secrets
     clusterResourceWhitelist:
       - group: '*'
         kind: '*'
 
 applications:
-  - name: postpilot-fleet-prod
+  - name: external-secrets
     project: postpilot
     source:
-      path: deploy-as-code/helm
+      repoUrl: https://charts.external-secrets.io
+      targetRevision: 0.9.13
+      chart: external-secrets
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: external-secrets
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+        - CreateNamespace=true
+
+  - name: postpilot-infra-prod
+    project: postpilot
+    source:
+      path: deploy-as-code/helm/charts/postpilot-services/postpilot-infra
       targetRevision: HEAD
       helm:
         valueFiles:
-          - environments/prod.yaml
+          - ../../../../environments/prod.yaml
     destination:
       server: https://kubernetes.default.svc
       namespace: postpilot
     syncPolicy:
       automated:
-        prune: false # Safety: Manual sync for production
+        prune: false
+        selfHeal: true
+
+  - name: postpilot-gateway-prod
+    project: postpilot
+    source:
+      path: deploy-as-code/helm/charts/postpilot-services/postpilot-gateway
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - ../../../../environments/prod.yaml
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: postpilot
+    syncPolicy:
+      automated:
+        prune: false
+        selfHeal: true
+
+  - name: dashboard-prod
+    project: postpilot
+    source:
+      path: deploy-as-code/helm/charts/postpilot-services/dashboard
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - ../../../../environments/prod.yaml
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: postpilot
+    syncPolicy:
+      automated:
+        prune: false
         selfHeal: true
     imageUpdater:
-      imageList: "dashboard=asia-docker.pkg.dev/postpilot-0/postpilot/dashboard,api-server=asia-docker.pkg.dev/postpilot-0/postpilot/api-server,agent-engine=asia-docker.pkg.dev/postpilot-0/postpilot/agent-engine"
+      imageList: "dashboard=asia-docker.pkg.dev/postpilot-0/postpilot/dashboard"
       extraArgs:
         "dashboard.update-strategy": "latest"
         "dashboard.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"
+
+  - name: api-server-prod
+    project: postpilot
+    source:
+      path: deploy-as-code/helm/charts/postpilot-services/api-server
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - ../../../../environments/prod.yaml
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: postpilot
+    syncPolicy:
+      automated:
+        prune: false
+        selfHeal: true
+    imageUpdater:
+      imageList: "api-server=asia-docker.pkg.dev/postpilot-0/postpilot/api-server"
+      extraArgs:
         "api-server.update-strategy": "latest"
         "api-server.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"
+
+  - name: agent-engine-prod
+    project: postpilot
+    source:
+      path: deploy-as-code/helm/charts/postpilot-services/agent-engine
+      targetRevision: HEAD
+      helm:
+        valueFiles:
+          - ../../../../environments/prod.yaml
+    destination:
+      server: https://kubernetes.default.svc
+      namespace: postpilot
+    syncPolicy:
+      automated:
+        prune: false
+        selfHeal: true
+    imageUpdater:
+      imageList: "agent-engine=asia-docker.pkg.dev/postpilot-0/postpilot/agent-engine"
+      extraArgs:
         "agent-engine.update-strategy": "latest"
         "agent-engine.allow-tags": "regexp:^[0-9]{8}-[0-9]{6}$"
