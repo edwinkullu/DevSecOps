@@ -29,7 +29,7 @@ global:
     dashboard_url: "postpilot.kullu.site"
     api_url: "api-postpilot.kullu.site"
     agent_url: "agent-postpilot.kullu.site"
-  env: |
+  extraEnv:
     - name: NODE_ENV
       value: "production"
 
@@ -52,7 +52,7 @@ services:
   agent-engine:
     replicas: 2
     resources:
-      cpu_requests: "500m"
+      cpu_requests: "200m"
       memory_requests: "1Gi"
       cpu_limits: "2000m"
       memory_limits: "2Gi"

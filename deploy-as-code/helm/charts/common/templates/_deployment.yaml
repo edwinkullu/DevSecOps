@@ -137,6 +137,14 @@ spec:
 {{- end }}
 {{- end }}
 {{- /* --- Config: Environment Specific Overrides (NODE_ENV, etc) --- */ -}}
+{{- /* List-based (preferred): global.extraEnv and extraEnv support proper YAML lists */ -}}
+{{- if .Values.global.extraEnv }}
+{{- toYaml .Values.global.extraEnv | nindent 12 }}
+{{- end }}
+{{- if .Values.extraEnv }}
+{{- toYaml .Values.extraEnv | nindent 12 }}
+{{- end }}
+{{- /* String-based (legacy): kept for backward compat but prefer extraEnv lists above */ -}}
 {{- if .Values.env }}
 {{- tpl .Values.env . | nindent 12 }}
 {{- end }}
