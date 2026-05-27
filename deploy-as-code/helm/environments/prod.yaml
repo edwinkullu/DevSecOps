@@ -44,6 +44,15 @@ services:
       memory_limits: "1Gi"
   api-server:
     replicas: 2
+    env: |
+      - name: FRONTEND_URL
+        value: "https://postpilot.kullu.site"
+      - name: ALLOWED_ORIGINS
+        value: "https://postpilot.kullu.site"
+      - name: AGENT_ENGINE_URL
+        value: "http://agent-engine:8000"
+      - name: FIREBASE_PROJECT_ID
+        value: "postpilot-0"
     resources:
       cpu_requests: "200m"
       memory_requests: "512Mi"
