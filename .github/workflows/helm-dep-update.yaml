@@ -1,0 +1,59 @@
+name: Helm Dependency Update
+
+# Runs automatically whenever the common library chart is changed.
+# Re-packages common-*.tgz inside every dependent service chart and
+# commits the updated files back to the branch — so ArgoCD always
+# gets a fresh render without any manual "helm dependency update" step.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'deploy-as-code/helm/charts/common/**'
+
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to push the commit back
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Use a token so the push back triggers other workflows if needed
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.15.0'
+
+      - name: Run helm dependency update for all service charts
+        run: |
+          set -euo pipefail
+          SERVICES=(
+            deploy-as-code/helm/charts/postpilot-services/api-server
+            deploy-as-code/helm/charts/postpilot-services/agent-engine
+            deploy-as-code/helm/charts/postpilot-services/dashboard
+          )
+          for chart in "${SERVICES[@]}"; do
+            echo "Updating dependencies for: $chart"
+            helm dependency update "$chart"
+          done
+
+      - name: Commit updated .tgz packages
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage only the packaged chart files
+          git add deploy-as-code/helm/charts/postpilot-services/*/charts/*.tgz
+
+          # Only commit if something actually changed
+          if git diff --cached --quiet; then
+            echo "No changes to commit — .tgz files are already up to date."
+          else
+            git commit -m "chore(helm): auto-update common chart dependencies [skip ci]"
+            git push
+          fi
