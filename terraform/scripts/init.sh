@@ -28,4 +28,4 @@ fi
 echo "Initializing environment: $ENV using bucket: $BUCKET"
 
 cd "${SCRIPT_DIR}/../environments/${ENV}"
-terraform init -backend-config="bucket=${BUCKET}"
+terraform init -backend-config="bucket=${BUCKET}" -backend-config="prefix=terraform/state/${ENV}"

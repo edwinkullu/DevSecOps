@@ -15,13 +15,13 @@ terraform {
 provider "google" {
   project                     = var.project_id
   region                      = var.region
-  impersonate_service_account = var.infra_service_account
+  impersonate_service_account = var.infra_service_account != "" ? var.infra_service_account : null
 }
 
 provider "google-beta" {
   project                     = var.project_id
   region                      = var.region
-  impersonate_service_account = var.infra_service_account
+  impersonate_service_account = var.infra_service_account != "" ? var.infra_service_account : null
 }
 
 # --- VPC MODULE ---
@@ -69,7 +69,7 @@ module "gke_cluster" {
   }
 
   project_id     = var.project_id
-  zone           = var.zone
+  zone           = var.region
   node_locations = var.node_locations
   name           = var.name
   network        = module.vpc.vpc_id
@@ -89,11 +89,3 @@ module "gke_cluster" {
   deletion_protection    = var.gke_deletion_protection
 }
 
-# --- API GATEWAY MODULE ---
-module "api_gateway" {
-  source = "../../modules/api-gateway"
-
-  project_id  = var.project_id
-  region      = var.region
-  name_prefix = "${var.name}-${var.environment}"
-}

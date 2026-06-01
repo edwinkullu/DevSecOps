@@ -108,7 +108,7 @@ variable "machine_type" {
 
 variable "node_version" {
   type    = string
-  default = "1.35.2-gke.1269001"
+  default = "1.34.6-gke.1307000"
 }
 
 variable "gateway_api_channel" {
