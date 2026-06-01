@@ -79,7 +79,7 @@ resource "google_container_cluster" "primary" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
     ignore_changes = [
       node_config,
     ]

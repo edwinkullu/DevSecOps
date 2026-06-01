@@ -4,7 +4,7 @@ resource "google_compute_network" "vpc" {
   routing_mode            = "REGIONAL"
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -15,7 +15,7 @@ resource "google_compute_subnetwork" "subnet" {
   network       = google_compute_network.vpc.id
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 
   # ENFORCE: Private Google Access for secure API communication (Gemini, Vertex AI, etc.)
