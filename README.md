@@ -67,7 +67,7 @@ graph TD
 
 | Layer | Technology | Details |
 |-------|------------|---------|
-| **Container Orchestration** | GKE `1.35.x` | Zonal cluster in `us-central1-a` (Prod) / `me-central1-a` (UAT) |
+| **Container Orchestration** | GKE `1.34.x` | Zonal cluster in `us-central1-a` (Prod) / `me-central1-a` (UAT) |
 | **Load Balancer** | GKE Gateway API | `gke-l7-global-external-managed` — Global External Application LB |
 | **SSL Termination** | Certificate Manager | `postpilot-prod-cert-map` / `postpilot-uat-cert-map` via `certMap` binding |
 | **Static IP** | GCP Reserved IP | `postpilot-prod-ip` (34.36.56.4) / `postpilot-uat-ip` |
@@ -109,7 +109,6 @@ graph TD
 │       ├── gke-cluster/             # GKE Cluster + Node Pool
 │       ├── lb/                      # Load Balancer + Cert Map + SSL Entries
 │       ├── security/                # Cloud Armor policy rules
-│       ├── api-gateway/             # (Reserved) API Gateway module
 │       ├── db/                      # Database module
 │       └── storage/                 # GCS buckets
 │
@@ -475,7 +474,6 @@ Service account impersonation is used for all `terraform init` operations — no
 | `security` | Cloud Armor Security Policy, Rule Sets |
 | `storage` | GCS Buckets, IAM bindings |
 | `db` | Cloud SQL instances |
-| `api-gateway` | (Reserved) API Gateway configuration |
 
 ### Triggering Terraform
 
@@ -489,6 +487,20 @@ cd terraform/environments/prod
 terraform init -backend-config="bucket=postpilot-ai" -backend-config="prefix=terraform/state/prod"
 terraform plan -var-file=terraform.tfvars
 terraform apply
+```
+
+### Development / Free-Trial Teardowns
+
+For development and free-trial usage, the standard `prevent_destroy` safety locks have been permanently disabled (`prevent_destroy = false`) on the VPC, Subnet, and GKE Cluster modules. This allows you to rapidly spin up and tear down the expensive components of the environment using `terraform destroy -auto-approve` without hitting safety blocks. 
+
+**Preserving the Static IP:** If you tear down the environment but want to keep your static IP alive in GCP (to avoid breaking your DNS mapping), you must detach it from the Terraform state *before* destroying:
+```bash
+terraform state rm module.lb.google_compute_global_address.ip
+terraform destroy -auto-approve
+```
+Upon your next rebuild, simply re-import the IP before running apply:
+```bash
+terraform import module.lb.google_compute_global_address.ip postpilot-prod-ip
 ```
 
 ---
